@@ -77,6 +77,7 @@ void loop()
 
   if (ACAN_ESP32::can.receive(frameIn))
   {
+    debug.println("recu");
     auto sendMsg = [](CANMessage frameOut) -> bool
     {
       bool err = ACAN_ESP32::can.tryToSend(frameOut);
@@ -84,21 +85,21 @@ void loop()
     };
 
     const byte priorite = 0;
-    const byte commande = (frameIn.id & 0x7F80000) >> 19;
-    const byte idSatExp = (frameIn.id & 0x7F800) >> 11; // ID du satellite qui envoie
-    const byte response = (frameIn.id & 0x7F8) >> 3; // Reponse true = 1 false = O
-    const byte *idSatDest = &idSatExp;
+    const byte cmde = (frameIn.id & 0x7F80000) >> 19;
+    const byte idExp = (frameIn.id & 0x7F800) >> 11; // ID du satellite qui envoie
+    const byte resp = (frameIn.id & 0x7F8) >> 3; // Reponse true = 1 false = O
+    const byte *idDest = &idExp;
 
     frameOut.id |= priorite << 27;   // Priorite 0, 1, 2 ou 3
     frameOut.id |= idMain << 11;     // ID expediteur
-    frameOut.id |= *idSatDest << 3; // ID destinataire
+    frameOut.id |= *idDest << 3; // ID destinataire
     frameOut.ext = true;
     // frameOut.rtr = true; // Remote frame
 
-    debug.printf("Reception du sattelite : %d\n", idSatExp);
-    debug.printf("commande : 0x%0X\n", commande);
+    debug.printf("Reception du sattelite : %d\n", idExp);
+    debug.printf("commande : 0x%0X\n", cmde);
 
-    switch (commande)
+    switch (cmde)
     {
     case 0xB2: // Test du bus CAN
       debug.print("Req->Test du bus CAN\n");
@@ -113,11 +114,11 @@ void loop()
       // Enregistrement de l'expéditeur dans la base de données des satellites
       for (byte i = 0; i < NB_SAT; i++)
       {
-        if (idSatExp == sat[i].id())
+        if (idExp == sat[i].id())
           break;
         else if (sat[i].id() == NO_ID)
         {
-          sat[i].id(idSatExp);
+          sat[i].id(idExp);
           break;
         }
       }
