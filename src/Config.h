@@ -24,7 +24,7 @@
 
 /* ----- Wifi --------------------*/
 
-#define CONFIG 3 // Selection du mode
+#define CONFIG 2 // Selection du mode
 
 #if CONFIG == 0 // WiFi en mode point d’accès
 #define WIFI_AP_MODE
