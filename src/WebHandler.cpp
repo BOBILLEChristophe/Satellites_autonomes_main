@@ -1,6 +1,7 @@
 // WebHandler.cpp
 
 #include "WebHandler.h"
+#include <ACAN_ESP32.h>
 
 WebHandler::WebHandler() : _server(nullptr), _ws(nullptr) {}
 
@@ -70,22 +71,72 @@ void WebHandler::_WsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, 
 
       if (message.indexOf("wifi_on") >= 0)
       {
-#ifdef DEBUG
-        debug.println("wifi_on");
-#endif
         bool wifi_on = doc1["wifi_on"][0];
-        // Settings::WIFI_ON = wifi_on;
+        Settings::WIFI_ON = wifi_on;
+
+        CANMessage frame;
+        frame.id |= 2 << 27;    // Priorite 0, 1 ou 2
+        frame.id |= 0xBD << 19; // commande appelée
+        frame.id |= 254 << 11;  // ID expediteur
+        frame.ext = true;
+        frame.len = 1;
+        if(Settings::WIFI_ON)
+        	frame.data[0] = 1;
+    	else
+    		frame.data[0] = 0;
+        const bool ok = ACAN_ESP32::can.tryToSend(frame);
+#ifdef DEBUG
+        debug.printf(Settings::WIFI_ON ? "Wifi : on" : "Wifi : off");
+        debug.printf("\n");
+#endif
       }
 
       if (message.indexOf("discovery_on") >= 0)
       {
         bool discovery_on = doc1["discovery_on"][0];
-        // Settings::DISCOVERY_ON = discovery_on;
+        Settings::DISCOVERY_ON = discovery_on;
+
+        CANMessage frame;
+        frame.id |= 2 << 27;    // Priorite 0, 1 ou 2
+        frame.id |= 0xBE << 19; // commande appelée
+        frame.id |= 254 << 11;  // ID expediteur
+        frame.ext = true;
+        frame.len = 1;
+        frame.data[0] = Settings::DISCOVERY_ON;
+        const bool ok = ACAN_ESP32::can.tryToSend(frame);
 
 #ifdef DEBUG
         debug.printf(Settings::DISCOVERY_ON ? "Discovery : on" : "Discovery : off");
         debug.printf("\n");
 #endif
+      }
+
+      if (message.indexOf("save") >= 0)
+      {
+#ifdef DEBUG
+        debug.println("save all");
+#endif
+        CANMessage frame;
+        frame.id |= 2 << 27;    // Priorite 0, 1 ou 2
+        frame.id |= 0xBF << 19; // commande appelée
+        frame.id |= 254 << 11;  // ID expediteur
+        frame.ext = true;
+        frame.len = 0;
+        const bool ok = ACAN_ESP32::can.tryToSend(frame);
+      }
+
+      if (message.indexOf("restartEsp") >= 0)
+      {
+#ifdef DEBUG
+        debug.println("restartEsp");
+#endif
+        CANMessage frame;
+        frame.id |= 2 << 27;    // Priorite 0, 1 ou 2
+        frame.id |= 0xBC << 19; // commande appelée
+        frame.id |= 254 << 11;  // ID expediteur
+        frame.ext = true;
+        frame.len = 0;
+        const bool ok = ACAN_ESP32::can.tryToSend(frame);
       }
     }
     break;
@@ -101,25 +152,20 @@ void WebHandler::route()
 {
   // Route for root / web page
   _server->on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-              { request->send(SPIFFS, "/controller.html", "text/html"); });
+              { request->send(SPIFFS, "/index.html", "text/html"); });
 
-  // Route to load style.css file
   _server->on("/w3.css", HTTP_GET, [](AsyncWebServerRequest *request)
               { request->send(SPIFFS, "/w3.css", "text/css"); });
 
-  // Route to load style.css file
-  _server->on("css/style.css", HTTP_GET, [](AsyncWebServerRequest *request)
+  _server->on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request)
               { request->send(SPIFFS, "/style.css", "text/css"); });
 
-  // Route to load script.js file
-  _server->on("/script/controller_4.3.js", HTTP_GET, [](AsyncWebServerRequest *request)
+  _server->on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request)
               { request->send(SPIFFS, "/script.js", "text/javascript"); });
 
-  // Route to load json file
-  _server->on("/param.jso", HTTP_GET, [](AsyncWebServerRequest *request)
+  _server->on("/settings.json", HTTP_GET, [](AsyncWebServerRequest *request)
               { request->send(SPIFFS, "/settings.json", "text/json"); });
 
-  // Route to load favicons file
   _server->on("/favicon.png", HTTP_GET, [](AsyncWebServerRequest *request)
               { request->send(SPIFFS, "/favicon.png", "image/png"); });
 

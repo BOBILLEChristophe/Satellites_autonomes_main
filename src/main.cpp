@@ -1,5 +1,7 @@
 /*
 
+copyright (c) 2022 christophe.bobille - LOCODUINO - www.locoduino.org
+
 
 */
 
@@ -7,7 +9,7 @@
 #error "Select an ESP32 board"
 #endif
 
-#define VERSION "v 0.2"
+#define VERSION "v 0.3"
 #define PROJECT "Main satellite"
 
 #include "Config.h"
