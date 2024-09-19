@@ -11,14 +11,14 @@
 class Satellite
 {
 private:
-    uint8_t m_idNode;
+    uint16_t m_idNode;
     uint8_t m_ip[4];
 
 public:
     Satellite();
     void begin();
-    uint8_t id();
-    void id(uint8_t);
+    uint16_t id();
+    void id(uint16_t);
     static void watchDog(void *);
 };
 

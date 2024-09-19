@@ -75,9 +75,9 @@ void WebHandler::_WsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, 
         Settings::WIFI_ON = wifi_on;
 
         CANMessage frame;
-        frame.id |= 2 << 27;    // Priorite 0, 1 ou 2
-        frame.id |= 0xBD << 19; // commande appelée
-        frame.id |= 254 << 11;  // ID expediteur
+        frame.id |= 2 << 25;    // Priorite 0, 1 ou 2
+        frame.id |= 0xBD << 17; // commande appelée
+        frame.id |= 254;        // ID expediteur
         frame.ext = true;
         frame.len = 1;
         if(Settings::WIFI_ON)
@@ -97,9 +97,9 @@ void WebHandler::_WsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, 
         Settings::DISCOVERY_ON = discovery_on;
 
         CANMessage frame;
-        frame.id |= 2 << 27;    // Priorite 0, 1 ou 2
-        frame.id |= 0xBE << 19; // commande appelée
-        frame.id |= 254 << 11;  // ID expediteur
+        frame.id |= 2 << 25;    // Priorite 0, 1 ou 2
+        frame.id |= 0xBE << 17; // commande appelée
+        frame.id |= 254;  // ID expediteur
         frame.ext = true;
         frame.len = 1;
         frame.data[0] = Settings::DISCOVERY_ON;
@@ -117,9 +117,9 @@ void WebHandler::_WsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, 
         debug.println("save all");
 #endif
         CANMessage frame;
-        frame.id |= 2 << 27;    // Priorite 0, 1 ou 2
-        frame.id |= 0xBF << 19; // commande appelée
-        frame.id |= 254 << 11;  // ID expediteur
+        frame.id |= 2 << 25;    // Priorite 0, 1 ou 2
+        frame.id |= 0xBF << 17; // commande appelée
+        frame.id |= 254;  // ID expediteur
         frame.ext = true;
         frame.len = 0;
         const bool ok = ACAN_ESP32::can.tryToSend(frame);
@@ -131,9 +131,9 @@ void WebHandler::_WsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, 
         debug.println("restartEsp");
 #endif
         CANMessage frame;
-        frame.id |= 2 << 27;    // Priorite 0, 1 ou 2
-        frame.id |= 0xBC << 19; // commande appelée
-        frame.id |= 254 << 11;  // ID expediteur
+        frame.id |= 2 << 25;    // Priorite 0, 1 ou 2
+        frame.id |= 0xBC << 17; // commande appelée
+        frame.id |= 254;  // ID expediteur
         frame.ext = true;
         frame.len = 0;
         const bool ok = ACAN_ESP32::can.tryToSend(frame);

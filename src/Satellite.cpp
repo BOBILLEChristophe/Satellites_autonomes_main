@@ -4,11 +4,11 @@
 
 Satellite::Satellite(){};
 
-uint8_t Satellite::id()
+uint16_t Satellite::id()
 {
     return m_idNode;
 }
-void Satellite::id(uint8_t id)
+void Satellite::id(uint16_t id)
 {
     this->m_idNode = id;
 }

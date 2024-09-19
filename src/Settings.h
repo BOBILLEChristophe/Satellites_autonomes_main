@@ -17,7 +17,7 @@ class Settings
 public:
   static bool WIFI_ON;
   static bool DISCOVERY_ON;
-  static uint8_t idNode;
+  static uint16_t idNode;
   static uint8_t nbLoco;
   static const byte tableLoco[NB_LOCOS][6];
 

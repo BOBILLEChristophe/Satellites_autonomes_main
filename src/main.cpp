@@ -19,11 +19,11 @@ copyright (c) 2022 christophe.bobille - LOCODUINO - www.locoduino.org
 #include "WebHandler.h"
 #include "Wifi_fl.h"
 
-uint8_t idMain = 254;
+uint16_t idMain = 254;
 
 #include <ACAN_ESP32.h>
 
-static const uint32_t CAN_BITRATE = 1000UL * 1000UL; // 1 Mb/s
+static const uint32_t CAN_BITRATE = 250UL * 1000UL; // 250 Kb/s
 Fl_Wifi wifi;
 WebHandler webHandler;
 Satellite sat[NB_SAT];
@@ -48,6 +48,7 @@ void setup()
   ACAN_ESP32_Settings settings(CAN_BITRATE);
   settings.mRxPin = GPIO_NUM_22;
   settings.mTxPin = GPIO_NUM_23;
+
   // const ACAN_ESP32_Filter filter = ACAN_ESP32_Filter::singleExtendedFilter(
   //     ACAN_ESP32_Filter::dataAndRemote, 0xB << 7, 0x1FFFFDFF);
   // uint32_t errorCode = ACAN_ESP32::can.begin(settings, filter);
@@ -62,7 +63,7 @@ void setup()
 
   Settings::begin();
   Settings::readFile();
-  Task::begin();
+  //Task::begin();
 
   wifi.start();
   webHandler.init(80);
@@ -80,23 +81,21 @@ void loop()
   if (ACAN_ESP32::can.receive(frameIn))
   {
     debug.println("recu");
+      
     auto sendMsg = [](CANMessage frameOut) -> bool
     {
+      frameOut.id |= idMain;
       bool err = ACAN_ESP32::can.tryToSend(frameOut);
       return err;
     };
 
-    const byte priorite = 0;
-    const byte cmde = (frameIn.id & 0x7F80000) >> 19;
-    const byte idExp = (frameIn.id & 0x7F800) >> 11; // ID du satellite qui envoie
-    const byte resp = (frameIn.id & 0x7F8) >> 3; // Reponse true = 1 false = O
-    const byte *idDest = &idExp;
-
-    frameOut.id |= priorite << 27;   // Priorite 0, 1, 2 ou 3
-    frameOut.id |= idMain << 11;     // ID expediteur
-    frameOut.id |= *idDest << 3; // ID destinataire
+    const byte priorite = (frameIn.id & 0x1E000000) >> 25;  // Priorite
+    const byte cmde = (frameIn.id & 0x1FE0000) >> 17;       // Code de la commande
+    const bool resp = (frameIn.id & 0x10000) >> 16;         // Reponse
+    const uint16_t idExp = frameIn.id & 0xFFFF;             // ID du satellite qui envoie
+    
+    frameOut.id |= priorite << 25;                          // Priorite 0, 1, 2 ou 3
     frameOut.ext = true;
-    // frameOut.rtr = true; // Remote frame
 
     debug.printf("Reception du sattelite : %d\n", idExp);
     debug.printf("commande : 0x%0X\n", cmde);
@@ -106,9 +105,9 @@ void loop()
     case 0xB2: // Test du bus CAN
       debug.print("Req->Test du bus CAN\n");
       frameOut.len = 1;
-      frameOut.id |= 0xB3 << 19; // commande chez le destinataire
-      frameOut.id |= 0x01 << 2;  // reponse
-      frameOut.data[0] = 1;      // message retourné (1 pour OK)
+      frameOut.id |= 0xB3 << 17;  // commande
+      frameOut.id |= 0x01 << 16;  // reponse
+      frameOut.data[0] = 1;       // message retourné (1 pour OK)
 
       if (sendMsg(frameOut))
         debug.printf("Send->Test du bus CAN : OK\n\n");
@@ -131,8 +130,8 @@ void loop()
       {
         debug.print("Req->Demande d'identifiant\n");
         frameOut.len = 1;
-        frameOut.id |= 0xB5 << 19;            // commande chez le destinataire
-        frameOut.id |= 0x01 << 2;  // reponse
+        frameOut.id |= 0xB5 << 17;           // commande chez le destinataire
+        frameOut.id |= 0x01 << 16;           // reponse
         frameOut.data[0] = Settings::idNode; // id retourne
 
         if (sendMsg(frameOut))
@@ -146,15 +145,15 @@ void loop()
         debug.printf("Taille maxi des identifiants atteinte : %d\n\n", Settings::idNode);
       break;
 
-    // case 0xB6: // Demande le nombre de locos
-    //   debug.print("Req->Nombre de locos\n");
-    //   frameOut.len = 1;
-    //   frameOut.id |= 0xB7 << 3; // commande chez le destinataire
-    //   frameOut.data[0] = Settings::nbLoco;
+      // case 0xB6: // Demande le nombre de locos
+      //   debug.print("Req->Nombre de locos\n");
+      //   frameOut.len = 1;
+      //   frameOut.id |= 0xB7 << 3; // commande chez le destinataire
+      //   frameOut.data[0] = Settings::nbLoco;
 
-    //   if (sendMsg(frameOut))
-    //     debug.printf("Send->Nombre de locos : %d\n\n", frameOut.data[1]);
-    //   break;
+      //   if (sendMsg(frameOut))
+      //     debug.printf("Send->Nombre de locos : %d\n\n", frameOut.data[1]);
+      //   break;
 
       //      case 0xB8 : // Demande le tag de locos
       //        debug.print ("Demande tag de locos\n");
